@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,11 +15,55 @@ import { CheckCircle2 } from "lucide-react"
 
 export function WaitlistSection() {
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [hasJoined, setHasJoined] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: "",
+    email: "",
+    role: "",
+  })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    setMounted(true)
+    const joined = localStorage.getItem("waitlist_joined")
+    if (joined === "true") {
+      setHasJoined(true)
+    }
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/waitlist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        await response.json()
+        localStorage.setItem("waitlist_joined", "true")
+        setHasJoined(true)
+        setSubmitted(true)
+      } else {
+        const data = await response.json()
+        setError(data.detail || "Something went wrong. Please try again.")
+      }
+    } catch {
+      setError("Could not connect to server. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
+
+  if (!mounted) return null
 
   return (
     <section id="waitlist" className="py-20 md:py-28 bg-secondary/50">
@@ -34,15 +78,28 @@ export function WaitlistSection() {
           </p>
         </div>
 
-        {submitted ? (
+        {hasJoined || submitted ? (
           <div className="mt-12 flex flex-col items-center gap-4 rounded-2xl border border-primary/20 bg-card p-10 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
               <CheckCircle2 className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="font-heading text-xl font-semibold text-foreground">{"You're on the list!"}</h3>
+            <h3 className="font-heading text-xl font-semibold text-foreground">{"You're on the Waitlist!"}</h3>
             <p className="text-sm text-muted-foreground">
-              {"We'll be in touch when VitalPath is ready. Keep an eye on your inbox."}
+              {"Check your email for a confirmation and registration link."}
             </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => {
+                localStorage.removeItem("waitlist_joined")
+                setHasJoined(false)
+                setSubmitted(false)
+                setFormData({ firstName: "", email: "", role: "" })
+              }}
+            >
+              Clear and Test Again
+            </Button>
           </div>
         ) : (
           <form
@@ -59,6 +116,8 @@ export function WaitlistSection() {
                   placeholder="Your first name"
                   required
                   className="bg-background"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 />
               </div>
 
@@ -72,6 +131,8 @@ export function WaitlistSection() {
                   placeholder="you@example.com"
                   required
                   className="bg-background"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
 
@@ -79,7 +140,11 @@ export function WaitlistSection() {
                 <Label htmlFor="role" className="text-foreground">
                   I am a... <span className="text-destructive">*</span>
                 </Label>
-                <Select required>
+                <Select
+                  required
+                  value={formData.role}
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                >
                   <SelectTrigger id="role" className="bg-background">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
@@ -94,12 +159,16 @@ export function WaitlistSection() {
                 </Select>
               </div>
 
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
+
               <p className="text-xs text-muted-foreground leading-relaxed">
                 I agree to receive launch updates. You keep control — we never share your health data without your consent.
               </p>
 
-              <Button type="submit" size="lg" className="w-full text-base">
-                Join the Waitlist
+              <Button type="submit" size="lg" className="w-full text-base" disabled={loading}>
+                {loading ? "Joining..." : "Join the Waitlist"}
               </Button>
             </div>
           </form>
