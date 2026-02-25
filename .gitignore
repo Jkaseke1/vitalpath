@@ -9,21 +9,3 @@ node_modules/
 .env*.local
 .DS_Store
 .vercel
-pnpm-lock.yaml
-package-lock.json
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-venv/
-env/
-.venv/
-*.egg-info/
-dist/
-build/
-
-# Backend data
-backend/data/

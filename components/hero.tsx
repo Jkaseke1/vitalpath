@@ -45,7 +45,7 @@ export function Hero() {
           <div className="mt-16 w-full max-w-4xl">
             <div className="relative rounded-2xl border border-border bg-card p-2 shadow-2xl shadow-primary/5">
               <img
-                src="https://via.placeholder.com/800x400/cccccc/666666?text=Dashboard+Mockup"
+                src="/images/hero-dashboard.jpg"
                 alt="VitalPath health app showing patient monitoring dashboard with BP, glucose and weight tracking"
                 className="w-full rounded-xl"
               />
