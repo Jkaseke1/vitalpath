@@ -7,16 +7,24 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import secrets
-from supabase import create_client, Client
+import requests
 
-def get_supabase() -> Client:
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+def _headers():
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    }
+
+def _table_url():
+    return f"{SUPABASE_URL}/rest/v1/waitlist"
 
 def read_waitlist() -> List[WaitlistEntry]:
-    sb = get_supabase()
-    response = sb.table("waitlist").select("*").execute()
+    resp = requests.get(_table_url(), headers=_headers(), params={"select": "*"})
+    resp.raise_for_status()
     entries = []
-    for item in response.data:
+    for item in resp.json():
         try:
             entries.append(WaitlistEntry(**item))
         except:
@@ -24,15 +32,20 @@ def read_waitlist() -> List[WaitlistEntry]:
     return entries
 
 def write_waitlist(entries: List[WaitlistEntry]):
-    sb = get_supabase()
     for entry in entries:
         data = entry.dict()
         data["timestamp"] = str(data["timestamp"]) if data.get("timestamp") else None
-        sb.table("waitlist").upsert(data).execute()
+        resp = requests.post(_table_url(), headers={**_headers(), "Prefer": "resolution=merge-duplicates"}, json=data)
+        resp.raise_for_status()
 
 def update_waitlist_entry(token: str, updates: dict):
-    sb = get_supabase()
-    sb.table("waitlist").update(updates).eq("registrationToken", token).execute()
+    resp = requests.patch(
+        _table_url(),
+        headers=_headers(),
+        params={"registrationToken": f"eq.{token}"},
+        json=updates,
+    )
+    resp.raise_for_status()
 
 def send_confirmation_email(entry: WaitlistEntry):
     html_content = f"""
