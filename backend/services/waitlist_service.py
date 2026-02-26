@@ -1,51 +1,38 @@
-import json
-import os
 from typing import List
 from models.waitlist import WaitlistEntry
 import uuid
 from datetime import datetime
-from config.settings import DATA_DIR, WAITLIST_FILE
+from config.settings import EMAIL_USER, EMAIL_PASSWORD, SUPABASE_URL, SUPABASE_KEY
 import smtplib
 import ssl
 from email.message import EmailMessage
-from config.settings import EMAIL_USER, EMAIL_PASSWORD
 import secrets
-import socket
+from supabase import create_client, Client
 
-def get_local_ip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-    except:
-        ip = "127.0.0.1"
-    finally:
-        s.close()
-    return ip
-
-def ensure_data_dir():
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
+def get_supabase() -> Client:
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def read_waitlist() -> List[WaitlistEntry]:
-    if not os.path.exists(WAITLIST_FILE):
-        return []
-    with open(WAITLIST_FILE, 'r') as f:
-        data = json.load(f)
-        entries = []
-        for item in data:
-            try:
-                entry = WaitlistEntry(**item)
-                entries.append(entry)
-            except:
-                # skip invalid entries
-                pass
-        return entries
+    sb = get_supabase()
+    response = sb.table("waitlist").select("*").execute()
+    entries = []
+    for item in response.data:
+        try:
+            entries.append(WaitlistEntry(**item))
+        except:
+            pass
+    return entries
 
 def write_waitlist(entries: List[WaitlistEntry]):
-    ensure_data_dir()
-    with open(WAITLIST_FILE, 'w') as f:
-        json.dump([entry.dict() for entry in entries], f, default=str)
+    sb = get_supabase()
+    for entry in entries:
+        data = entry.dict()
+        data["timestamp"] = str(data["timestamp"]) if data.get("timestamp") else None
+        sb.table("waitlist").upsert(data).execute()
+
+def update_waitlist_entry(token: str, updates: dict):
+    sb = get_supabase()
+    sb.table("waitlist").update(updates).eq("registrationToken", token).execute()
 
 def send_confirmation_email(entry: WaitlistEntry):
     html_content = f"""
@@ -166,11 +153,12 @@ def send_confirmation_email(entry: WaitlistEntry):
         print(f"Failed to send email: {e}")
 
 def add_to_waitlist(entry: WaitlistEntry) -> WaitlistEntry:
-    entries = read_waitlist()
     entry.id = str(uuid.uuid4())
     entry.timestamp = datetime.utcnow()
     entry.registrationToken = secrets.token_urlsafe(32)
-    entries.append(entry)
-    write_waitlist(entries)
+    sb = get_supabase()
+    data = entry.dict()
+    data["timestamp"] = str(data["timestamp"])
+    sb.table("waitlist").insert(data).execute()
     send_confirmation_email(entry)
     return entry

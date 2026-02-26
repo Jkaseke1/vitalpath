@@ -1,7 +1,7 @@
 import traceback
 from fastapi import APIRouter, HTTPException, Request
 from models.waitlist import WaitlistEntry
-from services.waitlist_service import add_to_waitlist, read_waitlist, write_waitlist
+from services.waitlist_service import add_to_waitlist, read_waitlist, write_waitlist, update_waitlist_entry
 
 router = APIRouter()
 
@@ -36,17 +36,11 @@ async def update_registration(request: Request):
         if not token:
             raise HTTPException(status_code=400, detail="Token required")
 
-        entries = read_waitlist()
-        for i, entry in enumerate(entries):
-            if entry.registrationToken == token:
-                current = entry.dict()
-                for k, v in data.items():
-                    if k not in ('token', 'role', 'id', 'registrationToken', 'timestamp') and v is not None and v != '':
-                        current[k] = v
-                entries[i] = WaitlistEntry(**current)
-                write_waitlist(entries)
-                return {"success": True}
-        raise HTTPException(status_code=404, detail="Invalid token")
+        updates = {k: v for k, v in data.items()
+                   if k not in ('token', 'role', 'id', 'registrationToken', 'timestamp')
+                   and v is not None and v != ''}
+        update_waitlist_entry(token, updates)
+        return {"success": True}
     except HTTPException:
         raise
     except Exception as e:

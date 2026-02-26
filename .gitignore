@@ -7,5 +7,11 @@ __v0_jsx-dev-runtime.ts
 node_modules/
 .next/
 .env*.local
+.env
 .DS_Store
 .vercel
+pnpm-lock.yaml
+package-lock.json
+
+# Backend env
+backend/.env
