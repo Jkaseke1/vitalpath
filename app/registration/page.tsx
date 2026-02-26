@@ -1,13 +1,13 @@
 "use client"
 
 import { useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-export default function RegistrationPage() {
+function RegistrationContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
   const [user, setUser] = useState<any>(null)
@@ -152,5 +152,13 @@ export default function RegistrationPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function RegistrationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegistrationContent />
+    </Suspense>
   )
 }
