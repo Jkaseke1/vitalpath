@@ -19,7 +19,7 @@ export default function RegistrationPage() {
 
   useEffect(() => {
     if (token) {
-      fetch(`http://${window.location.hostname}:8000/api/waitlist/verify-token?token=${token}`)
+      fetch(`https://vitalpath-backend.onrender.com/api/waitlist/verify-token?token=${token}`)
         .then(res => res.json())
         .then(data => {
           if (data.user) {
@@ -45,7 +45,7 @@ export default function RegistrationPage() {
     e.preventDefault()
     setSubmitLoading(true)
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/waitlist/update-registration`, {
+      const response = await fetch(`https://vitalpath-backend.onrender.com/api/waitlist/update-registration`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, ...formData }),

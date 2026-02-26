@@ -39,7 +39,7 @@ export function WaitlistSection() {
     setError("")
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/waitlist`, {
+      const response = await fetch(`https://vitalpath-backend.onrender.com/api/waitlist`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
