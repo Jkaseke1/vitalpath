@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime
 from config.settings import EMAIL_USER, EMAIL_PASSWORD, SUPABASE_URL, SUPABASE_KEY
 import smtplib
-import ssl
 from email.message import EmailMessage
 import secrets
 import requests
@@ -156,9 +155,11 @@ def send_confirmation_email(entry: WaitlistEntry):
     msg['From'] = EMAIL_USER
     msg['To'] = entry.email
 
-    context = ssl.create_default_context()
     try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as server:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
             server.login(EMAIL_USER, EMAIL_PASSWORD)
             server.send_message(msg)
         print(f"Email sent to {entry.email}")
