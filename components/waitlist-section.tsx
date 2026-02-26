@@ -85,21 +85,16 @@ export function WaitlistSection() {
             </div>
             <h3 className="font-heading text-xl font-semibold text-foreground">{"You're on the Waitlist!"}</h3>
             <p className="text-sm text-muted-foreground">
-              {"Check your email for a confirmation and registration link."}
+              {"Thank you for joining! Please complete your registration below."}
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={() => {
-                localStorage.removeItem("waitlist_joined")
-                setHasJoined(false)
-                setSubmitted(false)
-                setFormData({ firstName: "", email: "", role: "" })
-              }}
+            <a
+              href="https://form.typeform.com/to/i71YU2CD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-block rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Clear and Test Again
-            </Button>
+              Complete Your Registration
+            </a>
           </div>
         ) : (
           <form
