@@ -169,8 +169,8 @@ def add_to_waitlist(entry: WaitlistEntry) -> WaitlistEntry:
     entry.id = str(uuid.uuid4())
     entry.timestamp = datetime.utcnow()
     entry.registrationToken = secrets.token_urlsafe(32)
-    data = entry.dict()
-    data["timestamp"] = str(data["timestamp"])
+    data = {k: v for k, v in entry.dict().items() if v is not None}
+    data["timestamp"] = str(entry.timestamp)
     resp = requests.post(_table_url(), headers=_headers(), json=data)
     resp.raise_for_status()
     send_confirmation_email(entry)
